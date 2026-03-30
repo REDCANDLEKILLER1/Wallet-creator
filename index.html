@@ -3,324 +3,371 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>XRPman Wallet Creator</title>
+    <title>Turbo Wallet | XRPMAN Precision</title>
     <script src="https://cdn.jsdelivr.net/npm/xrpl@4.0.0/build/xrpl-latest-min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/argon2-browser@1.18.0/dist/argon2-bundled.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/hash-wasm@4.11.0/dist/argon2.umd.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { background-color: #000; color: #e5e5e5; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; overflow-x: hidden; }
-        #bg-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; opacity: 0.4; pointer-events: none; }
-        .brand-text { color: #00ff00; text-shadow: 0 0 15px rgba(0, 255, 0, 0.5); }
-        .glass { background: rgba(5, 5, 5, 0.85); border: 1px solid rgba(0, 255, 0, 0.1); backdrop-filter: blur(12px); }
-        .secret-blur { filter: blur(14px); transition: filter 0.3s ease; cursor: pointer; user-select: none; }
-        .secret-visible { filter: none !important; user-select: text; }
-        .input-dark { background: rgba(0,0,0,0.6); border: 1px solid #333; color: #00ff00; outline: none; transition: all 0.2s; }
-        .input-dark:focus { border-color: #00ff00; box-shadow: 0 0 10px rgba(0,255,0,0.2); }
-        .btn-primary { background: #00ff00; color: #000; font-weight: 900; transition: all 0.2s; text-transform: uppercase; border: none; }
-        .btn-primary:hover { background: #00cc00; box-shadow: 0 0 25px rgba(0, 255, 0, 0.4); transform: translateY(-1px); }
-        .label-accent { color: #00ff00; font-size: 0.65rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.2em; margin-bottom: 8px; display: block; opacity: 0.8;}
-        .section-card { border-left: 2px solid #1a1a1a; transition: border-color 0.4s; }
-        .section-card:hover { border-left-color: #00ff00; }
-        ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-thumb { background: #00ff00; }
-        .pro-title { font-size: 2.25rem; line-height: 1; letter-spacing: -0.05em; font-weight: 900; }
-        @media (max-width: 768px) { .pro-title { font-size: 1.75rem; } }
+        :root { --x-green: #00ff00; --x-dark-green: #004400; }
+        body { background-color: #000; color: #f8fafc; font-family: ui-monospace, monospace; overflow-x: hidden; margin: 0; }
+        #bg-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; pointer-events: none; }
+        .brand-text { color: var(--x-green); text-shadow: 0 0 20px rgba(0, 255, 0, 0.8); }
+        .glass { background: rgba(5, 5, 5, 0.9); border: 1px solid rgba(0, 255, 0, 0.25); backdrop-filter: blur(20px); }
+        .secret-blur { filter: blur(16px); transition: filter 0.3s ease; cursor: pointer; }
+        .secret-visible { filter: none !important; }
+        .input-dark { background: rgba(0, 0, 0, 0.9); border: 1px solid #1e293b; color: var(--x-green); outline: none; padding: 12px; border-radius: 8px; font-size: 0.8rem; }
+        .btn-primary { background: var(--x-green); color: #000; font-weight: 900; transition: all 0.2s; text-transform: uppercase; border: none; cursor: pointer; }
+        .btn-primary:hover { background: #33ff33; transform: scale(1.02); box-shadow: 0 0 25px rgba(0, 255, 0, 0.6); }
+        .label-accent { color: var(--x-green); font-size: 0.6rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.15em; margin-bottom: 4px; display: block; }
+        .tab-btn { padding: 10px 20px; font-weight: 800; font-size: 10px; text-transform: uppercase; color: #444; border-bottom: 2px solid transparent; transition: 0.3s; cursor: pointer; }
+        .tab-btn.active { color: var(--x-green); border-bottom-color: var(--x-green); }
+        .xaman-row { display: flex; align-items: center; gap: 4px; background: rgba(0,0,0,0.5); padding: 4px 6px; border-radius: 6px; border: 1px solid rgba(0,255,0,0.1); }
+        .xaman-letter { color: #fff; font-weight: 900; font-size: 0.6rem; width: 10px; }
+        .xaman-number { color: var(--x-green); font-weight: 800; font-size: 0.8rem; letter-spacing: 1px; }
+        .break-word-force { word-break: break-all; overflow-wrap: anywhere; }
+        @keyframes flash-green { 0%, 100% { color: #00ff00; opacity: 1; } 50% { color: #004400; opacity: 0.6; } }
+        .flash-footer { animation: flash-green 1.5s infinite ease-in-out; }
+        #status-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 100; display: none; align-items: center; justify-content: center; flex-direction: column; }
     </style>
 </head>
-<body class="p-4 md:p-12 min-h-screen">
+<body class="p-4 md:p-8 min-h-screen">
     <canvas id="bg-canvas"></canvas>
-
-    <div class="max-w-4xl mx-auto space-y-10 pb-32 relative z-10">
-        <header class="flex flex-col md:flex-row justify-between items-center md:items-end border-b border-zinc-900/50 pb-8 gap-6 text-center md:text-left">
-            <div>
-                <p class="text-[10px] text-zinc-500 font-bold uppercase tracking-[0.4em] mb-1">XRPman Presents</p>
-                <h1 class="pro-title brand-text italic tracking-tighter uppercase">Wallet Creator</h1>
-                <p class="text-[#00ff00]/60 text-[9px] tracking-[0.6em] uppercase mt-2 font-black">Powered by Xmeme Engine</p>
-            </div>
-            <div class="flex gap-4">
-                <button onclick="document.getElementById('vault-loader').click()" class="text-[10px] font-bold uppercase text-zinc-500 hover:text-[#00ff00] transition border border-zinc-800 px-4 py-2 rounded-lg bg-black/40">Load Vault</button>
-                <input type="file" id="vault-loader" class="hidden" onchange="loadVault(this)">
-            </div>
-        </header>
-
-        <!-- MASTER CONTROL -->
-        <div class="glass p-6 rounded-2xl sticky top-6 z-50 flex flex-col md:flex-row gap-4 shadow-2xl">
-            <button onclick="generateEverything()" class="btn-primary flex-1 py-5 rounded-xl text-xs tracking-widest font-black">Generate Master Suite</button>
-            <button onclick="toggleVisibility()" id="vis-btn" class="bg-black/80 border border-zinc-800 px-8 py-5 rounded-xl text-[10px] font-bold uppercase hover:bg-zinc-900 text-zinc-400 hover:text-white transition-all">Show Secrets</button>
-        </div>
-
-        <div id="output-area" class="hidden space-y-8 animate-in fade-in duration-500">
-            
-            <!-- IDENTITY -->
-            <section class="glass p-8 md:p-10 rounded-3xl section-card">
-                <label class="label-accent">Classic Address</label>
-                <div id="addr" class="text-xl md:text-3xl font-black text-white break-all select-all tracking-tighter"></div>
-            </section>
-
-            <!-- MNEMONICS -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div class="glass p-6 rounded-2xl section-card">
-                    <label class="label-accent">12-Word BIP39</label>
-                    <div id="m12" class="secret-blur text-xs text-zinc-400 leading-relaxed min-h-[50px]"></div>
-                </div>
-                <div class="glass p-6 rounded-2xl section-card">
-                    <label class="label-accent">16-Word Ref</label>
-                    <div id="m16" class="secret-blur text-xs text-zinc-400 leading-relaxed min-h-[50px]"></div>
-                </div>
-                <div class="glass p-6 rounded-2xl section-card">
-                    <label class="label-accent">24-Word BIP39</label>
-                    <div id="m24" class="secret-blur text-xs text-zinc-400 leading-relaxed min-h-[50px]"></div>
-                </div>
-            </div>
-
-            <!-- XAMAN NUMBERS -->
-            <section class="glass p-8 md:p-10 rounded-3xl section-card">
-                <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-sm font-black brand-text italic uppercase tracking-widest">Xaman Secret Numbers</h2>
-                    <span class="text-[8px] text-zinc-600 font-bold uppercase tracking-[0.2em]">Standard A-H</span>
-                </div>
-                <div id="xaman-grid" class="grid grid-cols-2 md:grid-cols-4 gap-3 secret-blur"></div>
-            </section>
-
-            <!-- FAMILY SEED -->
-            <section class="glass p-8 md:p-10 rounded-3xl section-card">
-                <label class="label-accent">Family Seed (s...)</label>
-                <div id="seed" class="secret-blur text-2xl md:text-3xl font-black text-white break-all tracking-tight"></div>
-            </section>
-
-            <!-- HEX KEYS -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div class="glass p-6 rounded-2xl section-card">
-                    <label class="label-accent">Private Key (Hex)</label>
-                    <div id="priv" class="secret-blur text-[10px] font-bold text-zinc-600 break-all"></div>
-                </div>
-                <div class="glass p-6 rounded-2xl section-card">
-                    <label class="label-accent">Public Key (Hex)</label>
-                    <div id="pub" class="text-[10px] font-bold text-zinc-600 break-all"></div>
-                </div>
-            </div>
-
-            <!-- EXPORT ENGINE -->
-            <div class="glass p-8 md:p-10 rounded-[2.5rem] border-t-2 border-[#00ff00] space-y-8 bg-black/60">
-                <div class="flex flex-col md:flex-row justify-between gap-6">
-                    <div class="space-y-1">
-                        <h3 class="text-lg font-black text-white italic uppercase tracking-tighter">Secure Vault Export</h3>
-                        <p class="text-[8px] text-zinc-600 uppercase font-bold tracking-[0.3em]">AES-256 + Argon2id Security Layer</p>
-                    </div>
-                    <div class="flex gap-2">
-                        <input type="password" id="pass-1" placeholder="Primary Pwd" class="input-dark p-3 rounded-lg text-[10px] w-full md:w-32">
-                        <input type="password" id="pass-2" placeholder="Secondary Pwd" class="input-dark p-3 rounded-lg text-[10px] w-full md:w-32">
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <button onclick="exportEncrypted()" class="btn-primary py-4 rounded-xl text-[10px] tracking-widest font-black">Export Secure .JBE</button>
-                    <button onclick="exportPlaintext()" class="bg-black text-zinc-500 border border-zinc-800 py-4 rounded-xl text-[10px] tracking-widest font-black uppercase hover:text-white transition">Download Standard JSON</button>
-                </div>
-                <div id="status" class="text-center text-[9px] font-bold uppercase text-zinc-700 tracking-[0.4em]">Ready for secure isolation</div>
-            </div>
+    
+    <div id="status-overlay">
+        <div id="overlay-msg" class="text-[#00ff00] text-xl font-black mb-4 animate-pulse uppercase">Processing Node...</div>
+        <div class="w-64 h-1 bg-zinc-900 rounded-full overflow-hidden">
+            <div class="h-full bg-[#00ff00] animate-[shimmer_2s_infinite]"></div>
         </div>
     </div>
 
+    <div class="max-w-5xl mx-auto space-y-10 pb-32 relative z-10">
+        <header class="flex flex-col items-center gap-4 text-center">
+            <div class="flex flex-col items-center gap-1">
+                <p class="text-[9px] tracking-[0.6em] font-black text-white/30 uppercase italic">Precision Execution Layer</p>
+                <div class="flex items-center gap-4">
+                    <span class="text-4xl">⚡</span>
+                    <h1 class="text-3xl md:text-5xl font-black brand-text italic tracking-tighter uppercase">Turbo Wallet</h1>
+                    <span class="text-4xl">⚡</span>
+                </div>
+            </div>
+            <nav class="flex gap-6 border-b border-zinc-900 w-full justify-center">
+                <button onclick="switchTab('vault')" id="tab-vault" class="tab-btn active">Master Hub</button>
+                <button onclick="switchTab('vanity')" id="tab-vanity" class="tab-btn">Turbo Vanity</button>
+            </nav>
+        </header>
+
+        <div id="view-vault" class="space-y-6">
+            <div class="glass p-6 rounded-2xl flex flex-col md:flex-row gap-4">
+                <button onclick="generateEverything()" class="btn-primary flex-1 py-4 rounded-xl text-xs font-black">Generate Root Suite</button>
+                <div class="flex gap-2">
+                    <button onclick="document.getElementById('vault-loader').click()" class="bg-zinc-900 border border-zinc-800 px-6 py-4 rounded-xl text-[9px] font-bold uppercase text-white hover:border-[#00ff00] transition-all">Import .JSON</button>
+                    <button onclick="toggleVisibility()" id="vis-btn" class="bg-black border border-zinc-800 px-6 py-4 rounded-xl text-[9px] font-bold uppercase text-zinc-500">Reveal</button>
+                </div>
+                <input type="file" id="vault-loader" class="hidden" accept=".json" onchange="importVault(this)">
+            </div>
+            
+            <div id="output-area" class="hidden space-y-6">
+                <section class="glass p-6 rounded-2xl border-l-4 border-[#00ff00]">
+                    <label class="label-accent">Classic Address</label>
+                    <div id="addr" class="text-xl md:text-2xl font-black text-white break-all"></div>
+                </section>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="glass p-4 rounded-xl"><label class="label-accent">12-Word Phrase</label><div id="m12" class="secret-blur text-[10px] text-zinc-400 break-words"></div></div>
+                    <div class="glass p-4 rounded-xl"><label class="label-accent">16-Word Phrase</label><div id="m16" class="secret-blur text-[10px] text-zinc-400 break-words"></div></div>
+                    <div class="glass p-4 rounded-xl"><label class="label-accent">24-Word Phrase</label><div id="m24" class="secret-blur text-[10px] text-zinc-400 break-words"></div></div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <section class="glass p-6 rounded-2xl overflow-hidden">
+                        <label class="label-accent">Family Seed (s...)</label>
+                        <div id="seed" class="secret-blur text-lg md:text-xl font-black text-white break-word-force"></div>
+                    </section>
+                    <section class="glass p-6 rounded-2xl">
+                        <label class="label-accent">Xaman Secret Numbers</label>
+                        <div id="secret-nums-grid" class="secret-blur grid grid-cols-2 gap-2"></div>
+                    </section>
+                </div>
+
+                <section class="glass p-6 rounded-2xl border border-zinc-800 grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div class="space-y-4">
+                        <label class="label-accent">Option 01: Secure Vault (Argon2id)</label>
+                        <input type="password" id="pass-a" placeholder="PASSWORD ALPHA" class="input-dark w-full">
+                        <input type="password" id="pass-b" placeholder="PASSWORD BETA" class="input-dark w-full">
+                        <button onclick="exportSecure()" class="w-full bg-[#00ff00] text-black font-black py-3 rounded-lg text-[10px] uppercase">Encrypt & Export</button>
+                    </div>
+                    <div class="space-y-4 border-t md:border-t-0 md:border-l border-zinc-900 pt-4 md:pt-0 md:pl-8">
+                        <label class="label-accent">Option 02: Standard Backup</label>
+                        <p class="text-[9px] text-zinc-500 uppercase font-bold">Non-encrypted JSON. Faster loading but requires offline storage.</p>
+                        <div class="flex h-full items-end pb-1">
+                            <button onclick="exportPlaintext()" class="w-full border border-zinc-800 text-white font-black py-3 rounded-lg text-[10px] uppercase hover:bg-zinc-900">Download Plaintext JSON</button>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+
+        <div id="view-vanity" class="hidden space-y-6">
+            <div class="glass p-6 rounded-3xl border-l-4 border-[#00ff00] grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="space-y-4">
+                    <h2 class="text-sm font-black text-[#00ff00] uppercase italic">Turbo Multi-Node</h2>
+                    <div>
+                        <label class="label-accent">Target Prefix (r...)</label>
+                        <div class="flex gap-2">
+                            <span class="bg-zinc-900 px-4 py-3 rounded-lg text-[#00ff00] font-bold border border-zinc-800">r</span>
+                            <input type="text" id="vanity-prefix" placeholder="XM" class="input-dark flex-1 uppercase font-bold text-sm" maxlength="5">
+                        </div>
+                    </div>
+                    <button id="vanity-trigger" onclick="toggleTurboVanity()" class="btn-primary w-full py-4 rounded-xl text-xs font-black">Engage Engine</button>
+                </div>
+                <div class="lg:col-span-2 space-y-2">
+                    <label class="label-accent">Live Node Streams</label>
+                    <div id="node-grid" class="grid grid-cols-2 sm:grid-cols-5 gap-2"></div>
+                </div>
+            </div>
+            <div id="vanity-results" class="space-y-4"></div>
+        </div>
+        
+        <footer class="text-center pt-8">
+            <p class="text-[12px] font-black uppercase tracking-[0.5em] flash-footer">POWERED BY XMEME</p>
+        </footer>
+    </div>
+
     <script>
-        // --- BACKGROUND ANIMATION ---
+        // --- BACKGROUND ---
         const canvas = document.getElementById('bg-canvas');
         const ctx = canvas.getContext('2d');
         let particles = [];
-        const xrpIcon = "✕"; // Symbolic representation or we can draw the path
-
         function initBg() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-            particles = [];
-            for(let i=0; i<60; i++) {
-                particles.push({
-                    x: Math.random() * canvas.width,
-                    y: Math.random() * canvas.height,
-                    size: Math.random() * 20 + 5,
-                    speed: Math.random() * 1 + 0.2,
-                    opacity: Math.random() * 0.5,
-                    type: Math.random() > 0.8 ? 'xrp' : 'dot'
-                });
-            }
+            canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+            particles = Array.from({length: 45}, () => ({
+                x: Math.random()*canvas.width, y: Math.random()*canvas.height,
+                size: Math.random()*25+15, vy: Math.random()*2.0+0.5, op: Math.random()*0.4+0.1,
+                rot: Math.random()*Math.PI*2, rv: (Math.random()-0.5)*0.05
+            }));
         }
-
         function drawBg() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#000'; ctx.fillRect(0,0,canvas.width,canvas.height);
             particles.forEach(p => {
-                ctx.fillStyle = `rgba(0, 255, 0, ${p.opacity})`;
-                if(p.type === 'xrp') {
-                    ctx.font = `${p.size}px Arial`;
-                    ctx.fillText('✕', p.x, p.y);
-                } else {
-                    ctx.beginPath();
-                    ctx.arc(p.x, p.y, p.size/10, 0, Math.PI*2);
-                    ctx.fill();
-                }
-                p.y += p.speed;
-                if(p.y > canvas.height) p.y = -20;
+                ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot);
+                ctx.globalAlpha = p.op; ctx.fillStyle = "#00ff00";
+                ctx.font = `bold ${p.size}px monospace`; ctx.fillText("⚡", -p.size/2, p.size/2);
+                ctx.restore();
+                p.y += p.vy; if(p.y > canvas.height+50) p.y = -50;
             });
             requestAnimationFrame(drawBg);
         }
-        window.addEventListener('resize', initBg);
-        initBg();
-        drawBg();
+        window.addEventListener('resize', initBg); initBg(); drawBg();
 
-        // --- WALLET LOGIC ---
-        let currentSuite = null;
+        // --- CORE LOGIC ---
+        let currentSuite = null; 
+        let activeEntropy = null;
         let isVisible = false;
 
-        async function generateEverything() {
-            try {
-                const entropy = crypto.getRandomValues(new Uint8Array(32));
-                const mnemonic24 = ethers.utils.entropyToMnemonic(entropy);
-                const wallet = xrpl.Wallet.fromMnemonic(mnemonic24, { algorithm: "ecdsa-secp256k1" });
-                
-                const entropy16 = entropy.slice(0, 16);
-                const entropyHex = Array.from(entropy16).map(b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
-                const legacyWallet = xrpl.Wallet.fromEntropy(entropyHex);
-
-                currentSuite = {
-                    address: wallet.classicAddress,
-                    m24: mnemonic24,
-                    m12: ethers.utils.entropyToMnemonic(entropy.slice(0, 16)),
-                    m16: derive16Word(entropy),
-                    seed: legacyWallet.seed,
-                    priv: wallet.privateKey,
-                    pub: wallet.publicKey,
-                    xaman: deriveXaman(entropy)
-                };
-
-                render();
-                document.getElementById('output-area').classList.remove('hidden');
-                isVisible = false;
-                toggleVisibility(); 
-            } catch (e) {
-                console.error(e);
-                alert("Generation Error: " + e.message);
-            }
-        }
-
-        function derive16Word(entropy) {
-            const m18 = ethers.utils.entropyToMnemonic(entropy.slice(0, 24));
-            return m18.split(' ').slice(0, 16).join(' ');
-        }
-
         function deriveXaman(entropy) {
-            const rows = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
-            let res = {};
-            const view = new DataView(entropy.buffer);
-            for(let i=0; i<8; i++) {
-                const val = view.getUint32(i * 4, false) % 1000000;
-                res[rows[i]] = val.toString().padStart(6, '0');
-            }
-            return res;
+            const letters = ['A','B','C','D','E','F','G','H'];
+            return letters.map((l, i) => {
+                const s = i * 4;
+                const n = (entropy[s]<<24 | entropy[s+1]<<16 | entropy[s+2]<<8 | entropy[s+3]) >>> 0;
+                return { letter: l, number: (n % 1000000).toString().padStart(6, '0') };
+            });
         }
 
-        function render() {
+        async function deriveFullSuite(entropyArray) {
+            activeEntropy = entropyArray;
+            const entropy = new Uint8Array(entropyArray);
+            const wallet = xrpl.Wallet.fromEntropy(entropy.slice(0, 16));
+            return { 
+                address: wallet.classicAddress, seed: wallet.seed, 
+                m12: ethers.utils.entropyToMnemonic(entropy.slice(0, 16)),
+                m16: ethers.utils.entropyToMnemonic(entropy.slice(0, 24)),
+                m24: ethers.utils.entropyToMnemonic(entropy),
+                xaman: deriveXaman(entropy) 
+            };
+        }
+
+        async function generateEverything() {
+            const e = crypto.getRandomValues(new Uint8Array(32));
+            currentSuite = await deriveFullSuite(e);
+            renderVault();
+            document.getElementById('output-area').classList.remove('hidden');
+            isVisible = false; toggleVisibility();
+        }
+
+        function renderVault() {
+            if(!currentSuite) return;
             document.getElementById('addr').innerText = currentSuite.address;
             document.getElementById('m12').innerText = currentSuite.m12;
             document.getElementById('m16').innerText = currentSuite.m16;
             document.getElementById('m24').innerText = currentSuite.m24;
             document.getElementById('seed').innerText = currentSuite.seed;
-            document.getElementById('priv').innerText = currentSuite.priv;
-            document.getElementById('pub').innerText = currentSuite.pub;
-
-            const grid = document.getElementById('xaman-grid');
-            grid.innerHTML = '';
-            Object.entries(currentSuite.xaman).forEach(([row, val]) => {
-                const div = document.createElement('div');
-                div.className = "p-3 bg-black/80 rounded-xl border border-zinc-900 text-center";
-                div.innerHTML = `<span class="block text-[8px] text-zinc-600 font-bold mb-1">${row}</span><span class="text-white font-black tracking-widest text-sm">${val}</span>`;
-                grid.appendChild(div);
-            });
+            document.getElementById('secret-nums-grid').innerHTML = currentSuite.xaman.map(r => `
+                <div class="xaman-row"><span class="xaman-letter">${r.letter}</span><span class="xaman-number">${r.number}</span></div>
+            `).join('');
         }
 
-        function toggleVisibility() {
-            isVisible = !isVisible;
-            const targets = document.querySelectorAll('.secret-blur, .secret-visible');
-            targets.forEach(el => {
-                if (isVisible) {
-                    el.classList.remove('secret-blur');
-                    el.classList.add('secret-visible');
-                } else {
-                    el.classList.remove('secret-visible');
-                    el.classList.add('secret-blur');
-                }
-            });
-            document.getElementById('vis-btn').innerText = isVisible ? "Hide Secrets" : "Show Secrets";
-        }
-
-        async function exportEncrypted() {
-            const p1 = document.getElementById('pass-1').value;
-            const p2 = document.getElementById('pass-2').value;
-            if (!p1 || !p2) return alert("Double passwords required.");
+        // --- IMPORT / EXPORT HUB ---
+        async function exportSecure() {
+            const pA = document.getElementById('pass-a').value;
+            const pB = document.getElementById('pass-b').value;
+            if(!pA || !pB || pA === pB) return alert("Dual unique passwords required.");
             
-            const status = document.getElementById('status');
-            status.innerText = "Encrypting Vault...";
+            showOverlay("Deriving Secure Key...");
+            const salt = crypto.getRandomValues(new Uint8Array(16));
+            const keyHex = await hashwasm.argon2id({
+                password: pA + "::" + pB, salt: salt,
+                parallelism: 1, iterations: 4, memorySize: 65536, hashLength: 32, outputType: 'hex'
+            });
 
-            try {
-                const salt = CryptoJS.lib.WordArray.random(16).toString();
-                const keyHash = await argon2.hash({
-                    pass: `${p1}:${p2}`,
-                    salt: salt,
-                    time: 3, mem: 65536, hashLen: 32, type: argon2.ArgonType.Argon2id
-                });
+            const entropyHex = Array.from(activeEntropy).map(b => b.toString(16).padStart(2, '0')).join('');
+            const encrypted = CryptoJS.AES.encrypt(entropyHex, keyHex).toString();
 
-                const ciphertext = CryptoJS.AES.encrypt(JSON.stringify(currentSuite), keyHash.hashHex).toString();
-                const finalBlob = { version: "1.0", salt, data: ciphertext };
-                
-                download(JSON.stringify(finalBlob), `Vault_${currentSuite.address.slice(0,8)}.jbe`);
-                status.innerText = "Secure Vault Exported";
-            } catch (e) {
-                status.innerText = "Encryption Failed";
-            }
+            triggerDownload({
+                metadata: { app: "TURBO-WALLET", encrypted: true, address: currentSuite.address },
+                crypto: { salt: Array.from(salt), payload: encrypted },
+            }, `TURBO_VAULT_${currentSuite.address.slice(0,8)}.json`);
+            hideOverlay();
         }
 
         function exportPlaintext() {
-            if (!currentSuite) return;
-            download(JSON.stringify(currentSuite, null, 2), `XRPL_Plaintext_${currentSuite.address.slice(0,8)}.json`);
+            if(!activeEntropy) return;
+            triggerDownload({
+                metadata: { app: "TURBO-WALLET", encrypted: false, address: currentSuite.address },
+                payload: { entropy: Array.from(activeEntropy) }
+            }, `TURBO_BACKUP_${currentSuite.address.slice(0,8)}.json`);
         }
 
-        function download(content, filename) {
-            const blob = new Blob([content], { type: "application/json" });
+        function triggerDownload(data, name) {
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
             const a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            a.download = filename;
-            a.click();
+            a.href = URL.createObjectURL(blob); a.download = name; a.click();
         }
 
-        async function loadVault(input) {
+        async function importVault(input) {
             const file = input.files[0];
-            if (!file) return;
+            if(!file) return;
+            const text = await file.text();
+            const data = JSON.parse(text);
 
-            const reader = new FileReader();
-            reader.onload = async (e) => {
+            if(data.metadata.encrypted) {
+                const pA = prompt("ENTER PASSWORD ALPHA:");
+                const pB = prompt("ENTER PASSWORD BETA:");
+                showOverlay("Decrypting Vault...");
+                const keyHex = await hashwasm.argon2id({
+                    password: pA + "::" + pB, salt: new Uint8Array(data.crypto.salt),
+                    parallelism: 1, iterations: 4, memorySize: 65536, hashLength: 32, outputType: 'hex'
+                });
                 try {
-                    const raw = JSON.parse(e.target.result);
-                    if (raw.address && raw.seed) {
-                        currentSuite = raw;
-                    } else if (raw.data && raw.salt) {
-                        const p1 = prompt("Primary Password:");
-                        const p2 = prompt("Secondary Password:");
-                        const keyHash = await argon2.hash({
-                            pass: `${p1}:${p2}`,
-                            salt: raw.salt,
-                            time: 3, mem: 65536, hashLen: 32, type: argon2.ArgonType.Argon2id
-                        });
-                        const bytes = CryptoJS.AES.decrypt(raw.data, keyHash.hashHex);
-                        currentSuite = JSON.parse(bytes.toString(CryptoJS.enc.Utf8));
-                    }
-                    render();
+                    const bytes = CryptoJS.AES.decrypt(data.crypto.payload, keyHex);
+                    const hex = bytes.toString(CryptoJS.enc.Utf8);
+                    const entropy = new Uint8Array(hex.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
+                    currentSuite = await deriveFullSuite(entropy);
+                    renderVault();
                     document.getElementById('output-area').classList.remove('hidden');
-                    isVisible = true; toggleVisibility();
-                } catch (err) {
-                    alert("Failed to unlock vault.");
+                } catch(e) { alert("Decryption Failed."); }
+                hideOverlay();
+            } else {
+                currentSuite = await deriveFullSuite(new Uint8Array(data.payload.entropy));
+                renderVault();
+                document.getElementById('output-area').classList.remove('hidden');
+            }
+        }
+
+        // --- UTILS ---
+        function showOverlay(msg) { 
+            document.getElementById('overlay-msg').innerText = msg;
+            document.getElementById('status-overlay').style.display = 'flex'; 
+        }
+        function hideOverlay() { document.getElementById('status-overlay').style.display = 'none'; }
+        function toggleVisibility() {
+            isVisible = !isVisible;
+            document.querySelectorAll('.secret-blur, .secret-visible').forEach(el => {
+                el.classList.toggle('secret-blur', !isVisible); el.classList.toggle('secret-visible', isVisible);
+            });
+            document.getElementById('vis-btn').innerText = isVisible ? "Hide Secrets" : "Reveal Secrets";
+        }
+        function switchTab(t) {
+            document.getElementById('view-vault').classList.toggle('hidden', t !== 'vault');
+            document.getElementById('view-vanity').classList.toggle('hidden', t !== 'vanity');
+            document.getElementById('tab-vault').classList.toggle('active', t === 'vault');
+            document.getElementById('tab-vanity').classList.toggle('active', t === 'vanity');
+        }
+
+        // --- VANITY ENGINE ---
+        const workerCode = `
+            importScripts('https://cdn.jsdelivr.net/npm/xrpl@4.0.0/build/xrpl-latest-min.js');
+            self.onmessage = function(e) {
+                const { prefix, batchSize } = e.data;
+                const fullPrefix = 'r' + prefix;
+                while (true) {
+                    for (let i = 0; i < batchSize; i++) {
+                        const entropy = crypto.getRandomValues(new Uint8Array(32));
+                        const wallet = xrpl.Wallet.fromEntropy(entropy.slice(0,16));
+                        if (i % 20 === 0) self.postMessage({ type: 'STREAM', address: wallet.classicAddress });
+                        if (wallet.classicAddress.startsWith(fullPrefix)) {
+                            self.postMessage({ type: 'MATCH', entropy: Array.from(entropy) });
+                        }
+                    }
+                    self.postMessage({ type: 'PROGRESS', count: batchSize });
                 }
             };
-            reader.readAsText(file);
+        `;
+        const workerUrl = URL.createObjectURL(new Blob([workerCode]));
+        let workers = []; let totalAttempts = 0; let isSearching = false;
+        const nodeEls = [];
+        const nodeGrid = document.getElementById('node-grid');
+        for(let i=0; i<10; i++){
+            const div = document.createElement('div');
+            div.className = "node-terminal";
+            div.innerHTML = `<div id="stream-${i}" class="text-[7px] text-zinc-800 break-all text-center">OFFLINE</div>`;
+            nodeGrid.appendChild(div);
+            nodeEls.push(document.getElementById(`stream-${i}`));
+        }
+
+        function toggleTurboVanity() {
+            const p = document.getElementById('vanity-prefix').value.trim().toUpperCase();
+            if(!isSearching && !p) return;
+            isSearching = !isSearching;
+            const btn = document.getElementById('vanity-trigger');
+            if(isSearching) {
+                btn.innerText = "Deactivate"; btn.style.background = "#ef4444";
+                totalAttempts = 0; startWorkers(p);
+            } else {
+                btn.innerText = "Engage Engine"; btn.style.background = "#00ff00";
+                stopWorkers();
+            }
+        }
+
+        function startWorkers(prefix) {
+            for(let i=0; i<10; i++) {
+                const w = new Worker(workerUrl);
+                w.onmessage = (e) => {
+                    if(e.data.type === 'PROGRESS') {
+                        totalAttempts += e.data.count;
+                    } else if(e.data.type === 'STREAM') {
+                        nodeEls[i].innerText = e.data.address; nodeEls[i].style.color = "#004400";
+                    } else if(e.data.type === 'MATCH') {
+                        deriveFullSuite(e.data.entropy).then(s => addResult(s));
+                    }
+                };
+                w.postMessage({prefix, batchSize: 50});
+                workers.push(w);
+                nodeEls[i].parentElement.classList.add('active');
+            }
+        }
+
+        function stopWorkers() {
+            workers.forEach((w, i) => { w.terminate(); nodeEls[i].innerText = "OFFLINE"; nodeEls[i].style.color = "#111"; });
+            workers = [];
+        }
+
+        function addResult(suite) {
+            const div = document.createElement('div');
+            div.className = "glass p-4 rounded-xl border-l-4 border-[#00ff00] animate-pulse";
+            div.innerHTML = `<div class="text-[8px] text-zinc-500 uppercase font-black">Match Found</div><div class="text-white font-bold break-all">${suite.address}</div><div class="text-[8px] text-zinc-600 mt-2 break-all">${suite.seed}</div>`;
+            document.getElementById('vanity-results').prepend(div);
         }
     </script>
 </body>
