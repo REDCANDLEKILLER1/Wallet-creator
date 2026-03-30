@@ -3,45 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>XRPMAN | Turbo Wallet</title>
-    <!-- CRITICAL DEPENDENCIES -->
+    <title>XRPMAN | Turbo Lightning</title>
     <script src="https://cdn.jsdelivr.net/npm/xrpl@4.0.0/build/xrpl-latest-min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/hash-wasm@4.11.0/dist/argon2.umd.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        :root { --c-neon: #00ff00; --c-darker: #001a00; --glow: 0 0 15px rgba(0, 255, 0, 0.4); }
+        :root { --c-neon: #00ff00; --c-darker: #001a00; --glow: 0 0 20px rgba(0, 255, 0, 0.6); }
         body { background-color: #000; color: #fff; font-family: 'Courier New', monospace; overflow-x: hidden; margin: 0; }
-        
-        /* FX LAYERS */
-        #fx-canvas { position: fixed; inset: 0; z-index: -1; pointer-events: none; }
-        .scanline { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(to bottom, transparent 50%, rgba(0, 255, 0, 0.02) 50%); background-size: 100% 4px; z-index: 50; pointer-events: none; }
-        
-        /* TYPOGRAPHY */
-        .brand-text { color: var(--c-neon); text-shadow: 0 0 12px var(--c-neon); font-weight: 900; letter-spacing: -0.02em; }
-        .label-accent { color: var(--c-neon); font-size: 0.65rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.25em; margin-bottom: 6px; display: block; opacity: 0.9; }
-        
-        /* UI ELEMENTS */
-        .glass { background: rgba(0, 8, 0, 0.9); border: 1px solid rgba(0, 255, 0, 0.15); box-shadow: var(--glow); transition: all 0.3s ease; }
-        .glass:hover { border-color: rgba(0, 255, 0, 0.4); }
-        .secret-blur { filter: blur(14px); transition: filter 0.2s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer; }
+        #fx-canvas { position: fixed; inset: 0; z-index: -1; pointer-events: none; opacity: 0.8; }
+        .scanline { position: fixed; inset: 0; background: linear-gradient(to bottom, transparent 50%, rgba(0, 255, 0, 0.05) 50%); background-size: 100% 4px; z-index: 50; pointer-events: none; }
+        .brand-text { color: var(--c-neon); text-shadow: 0 0 15px var(--c-neon); font-weight: 900; letter-spacing: -0.02em; }
+        .label-accent { color: var(--c-neon); font-size: 0.65rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.25em; margin-bottom: 6px; display: block; }
+        .glass { background: rgba(0, 5, 0, 0.85); border: 1px solid rgba(0, 255, 0, 0.2); box-shadow: var(--glow); backdrop-filter: blur(4px); }
+        .secret-blur { filter: blur(14px); transition: filter 0.2s; cursor: pointer; }
         .secret-visible { filter: none !important; }
-        .input-dark { background: #000; border: 1px solid #1a1a1a; color: var(--c-neon); outline: none; padding: 12px; font-size: 0.8rem; border-radius: 2px; }
-        .input-dark:focus { border-color: var(--c-neon); box-shadow: 0 0 10px rgba(0, 255, 0, 0.2); }
-        .btn-primary { background: var(--c-neon); color: #000; font-weight: 900; text-transform: uppercase; border: none; cursor: pointer; transition: 0.2s; letter-spacing: 0.1em; }
-        .btn-primary:hover { filter: brightness(1.2); transform: scale(1.01); box-shadow: 0 0 25px var(--c-neon); }
-        
-        /* TABS */
-        .tab-btn { padding: 14px 28px; font-weight: 900; font-size: 10px; text-transform: uppercase; color: #444; border-bottom: 2px solid transparent; transition: 0.3s; cursor: pointer; letter-spacing: 0.2em; }
-        .tab-btn.active { color: var(--c-neon); border-bottom-color: var(--c-neon); text-shadow: 0 0 8px var(--c-neon); }
-        
-        /* XAMAN STYLING */
-        .xaman-row { display: flex; align-items: center; gap: 8px; background: rgba(0, 255, 0, 0.05); padding: 5px 10px; border: 1px solid rgba(0, 255, 0, 0.1); }
-        .xaman-letter { color: #fff; font-weight: 900; font-size: 0.6rem; opacity: 0.5; }
-        .xaman-number { color: var(--c-neon); font-weight: 800; font-size: 0.85rem; letter-spacing: 0.1em; }
-
-        #status-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.99); z-index: 1000; display: none; align-items: center; justify-content: center; flex-direction: column; border: 2px solid var(--c-neon); margin: 15px; }
+        .input-dark { background: #000; border: 1px solid #00ff0044; color: var(--c-neon); outline: none; padding: 12px; font-size: 0.8rem; }
+        .btn-primary { background: var(--c-neon); color: #000; font-weight: 900; text-transform: uppercase; border: none; cursor: pointer; box-shadow: 0 0 15px var(--c-neon); }
+        .btn-primary:hover { filter: brightness(1.2); transform: scale(1.02); }
+        .tab-btn { padding: 14px 28px; font-weight: 900; font-size: 10px; text-transform: uppercase; color: #333; border-bottom: 2px solid transparent; cursor: pointer; }
+        .tab-btn.active { color: var(--c-neon); border-bottom-color: var(--c-neon); text-shadow: 0 0 10px var(--c-neon); }
+        #status-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 1000; display: none; align-items: center; justify-content: center; flex-direction: column; border: 4px solid var(--c-neon); margin: 20px; }
     </style>
 </head>
 <body class="p-4 md:p-8 min-h-screen flex flex-col items-center">
@@ -49,352 +30,61 @@
     <div class="scanline"></div>
     
     <div id="status-overlay">
-        <div id="overlay-msg" class="text-[#00ff00] text-xl font-black mb-4 animate-pulse uppercase tracking-[0.5em]">SYSTEM_BUSY</div>
-        <div class="w-64 h-1 bg-zinc-950 overflow-hidden border border-[#00ff00]/20">
-            <div class="h-full bg-[#00ff00] animate-[shimmer_2s_infinite]"></div>
-        </div>
+        <div id="overlay-msg" class="text-[#00ff00] text-2xl font-black mb-4 uppercase tracking-[0.5em] italic">POWER_SURGE_ACTIVE</div>
     </div>
 
     <div class="w-full max-w-6xl space-y-8 pb-32 relative z-10">
-        <header class="flex flex-col items-center gap-2 text-center">
-            <p class="text-[10px] tracking-[1em] font-black text-[#00ff00]/60 uppercase ml-[1em]">XRPMAN PRESENTS</p>
-            <h1 class="text-5xl md:text-7xl font-black brand-text italic tracking-tighter uppercase">Turbo Wallet</h1>
-            <nav class="flex gap-4 w-full justify-center mt-6">
+        <header class="flex flex-col items-center text-center">
+            <p class="text-[10px] tracking-[1em] font-black text-[#00ff00] uppercase mb-2">High Voltage Extraction</p>
+            <h1 class="text-6xl md:text-8xl font-black brand-text italic uppercase leading-none">XRPMAN</h1>
+            <nav class="flex gap-4 w-full justify-center mt-8">
                 <button onclick="switchTab('vault')" id="tab-vault" class="tab-btn active">Terminal</button>
-                <button onclick="switchTab('vanity')" id="tab-vanity" class="tab-btn">Extraction</button>
+                <button onclick="switchTab('vanity')" id="tab-vanity" class="tab-btn">Turbo Engine</button>
             </nav>
         </header>
 
-        <!-- TERMINAL (VAULT) VIEW -->
+        <!-- TERMINAL -->
         <div id="view-vault" class="space-y-6">
-            <div class="glass p-6 rounded-sm flex flex-col md:flex-row gap-4 border-t-2 border-[#00ff00]">
-                <button onclick="generateEverything()" class="btn-primary flex-1 py-5 text-xs">Initialize Master Suite</button>
-                <div class="flex flex-col sm:flex-row gap-2">
-                    <button onclick="document.getElementById('vault-loader').click()" class="bg-black border border-zinc-800 px-8 py-5 text-[9px] font-black uppercase text-white hover:border-[#00ff00] transition-colors">Import JSON</button>
-                    <button onclick="toggleVisibility()" id="vis-btn" class="bg-black border border-zinc-900 px-8 py-5 text-[9px] font-black uppercase text-zinc-600 hover:text-[#00ff00]">Decrypt UI</button>
+            <div class="glass p-8 rounded-sm flex flex-col md:flex-row gap-6 border-t-4 border-[#00ff00]">
+                <button onclick="generateEverything()" class="btn-primary flex-1 py-6 text-sm italic">Generate Master Key</button>
+                <div class="flex gap-3">
+                    <button onclick="document.getElementById('vault-loader').click()" class="bg-black border border-[#00ff0044] px-10 py-6 text-[10px] font-black uppercase text-white hover:border-[#00ff00]">Import</button>
+                    <button onclick="toggleVisibility()" id="vis-btn" class="bg-black border border-[#00ff0022] px-10 py-6 text-[10px] font-black uppercase text-zinc-600">Decrypt</button>
                 </div>
                 <input type="file" id="vault-loader" class="hidden" accept=".json" onchange="importVault(this)">
             </div>
             
             <div id="output-area" class="hidden space-y-6">
-                <section class="glass p-8 border-l-4 border-[#00ff00]">
+                <section class="glass p-10 border-l-8 border-[#00ff00]">
                     <label class="label-accent">r-Address (Public)</label>
-                    <div id="addr" class="text-2xl md:text-4xl font-black text-white break-all tracking-tight"></div>
+                    <div id="addr" class="text-3xl md:text-5xl font-black text-white break-all tracking-tighter"></div>
                 </section>
-                
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div class="glass p-5"><label class="label-accent">Mnemonic 12</label><div id="m12" class="secret-blur text-[11px] text-zinc-400 leading-relaxed"></div></div>
-                    <div class="glass p-5"><label class="label-accent">Mnemonic 16</label><div id="m16" class="secret-blur text-[11px] text-zinc-400 leading-relaxed"></div></div>
-                    <div class="glass p-5"><label class="label-accent">Mnemonic 24</label><div id="m24" class="secret-blur text-[11px] text-zinc-400 leading-relaxed"></div></div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6" id="mnemonic-grid"></div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <section class="glass p-10"><label class="label-accent">Family Seed</label><div id="seed" class="secret-blur text-2xl md:text-3xl font-black text-white break-all"></div></section>
+                    <section class="glass p-10"><label class="label-accent">Xaman Secrets</label><div id="secret-nums-grid" class="secret-blur grid grid-cols-2 gap-3"></div></section>
                 </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <section class="glass p-8 overflow-hidden">
-                        <label class="label-accent">Family Seed</label>
-                        <div id="seed" class="secret-blur text-xl md:text-3xl font-black text-white break-all"></div>
-                    </section>
-                    <section class="glass p-8">
-                        <label class="label-accent">Xaman Secret Clusters</label>
-                        <div id="secret-nums-grid" class="secret-blur grid grid-cols-2 gap-2"></div>
-                    </section>
-                </div>
-
-                <section class="glass p-8 border border-zinc-900 grid grid-cols-1 md:grid-cols-2 gap-12">
-                    <div class="space-y-4">
-                        <label class="label-accent">Vault Encryption (Argon2id)</label>
-                        <input type="password" id="pass-a" placeholder="SECURITY KEY ALPHA" class="input-dark w-full">
-                        <input type="password" id="pass-b" placeholder="SECURITY KEY BETA" class="input-dark w-full">
-                        <button onclick="exportSecure()" class="w-full bg-[#00ff00] text-black font-black py-4 text-[11px] uppercase tracking-widest">Arm & Export</button>
-                    </div>
-                    <div class="space-y-4 border-t md:border-t-0 md:border-l border-zinc-900 pt-6 md:pt-0 md:pl-12 flex flex-col justify-between">
-                        <div>
-                            <label class="label-accent">Plaintext Export</label>
-                            <p class="text-[10px] text-zinc-600 uppercase font-bold tracking-tighter">Raw kernel package. No encryption.</p>
-                        </div>
-                        <button onclick="exportPlaintext()" class="w-full border border-zinc-800 text-white font-black py-4 text-[11px] uppercase tracking-widest hover:bg-zinc-950">Download Raw</button>
-                    </div>
-                </section>
             </div>
         </div>
 
-        <!-- EXTRACTION ENGINE (VANITY) VIEW -->
+        <!-- TURBO ENGINE -->
         <div id="view-vanity" class="hidden space-y-6">
-            <div class="glass p-6 md:p-8 border-l-4 border-[#00ff00] flex flex-col lg:flex-row gap-8">
-                <div class="w-full lg:w-1/3 space-y-6">
-                    <h2 class="text-sm font-black text-[#00ff00] uppercase italic tracking-[0.2em]">Extraction Engine</h2>
-                    <div class="w-full">
-                        <label class="label-accent">Target Prefix</label>
-                        <div class="flex w-full">
-                            <span class="bg-black px-4 py-3 text-[#00ff00] font-black border border-zinc-800 flex items-center">r</span>
-                            <input type="text" id="vanity-prefix" placeholder="OP" class="input-dark flex-1 uppercase font-black text-lg min-w-0" maxlength="5">
+            <div class="glass p-8 border-l-8 border-[#00ff00] flex flex-col lg:flex-row gap-10">
+                <div class="w-full lg:w-1/3 space-y-8">
+                    <h2 class="text-xl font-black text-[#00ff00] uppercase italic tracking-[0.3em]">Extraction</h2>
+                    <div>
+                        <label class="label-accent">Prefix Requirement</label>
+                        <div class="flex w-full shadow-[0_0_15px_rgba(0,255,0,0.2)]">
+                            <span class="bg-[#00ff00] px-5 py-4 text-black font-black border-none flex items-center">r</span>
+                            <input type="text" id="vanity-prefix" placeholder="WIN" class="input-dark flex-1 uppercase font-black text-xl border-none" maxlength="6">
                         </div>
                     </div>
-                    <div class="bg-black p-4 border border-zinc-900">
-                        <div class="flex items-center justify-between gap-4">
-                            <label for="auto-dl" class="text-[10px] uppercase font-black text-zinc-600">Auto-Download Matches</label>
-                            <input type="checkbox" id="auto-dl" class="w-5 h-5 accent-[#00ff00] shrink-0">
-                        </div>
-                    </div>
-                    <button id="vanity-trigger" onclick="toggleTurboVanity()" class="btn-primary w-full py-5 text-xs">Run Extraction</button>
+                    <button id="vanity-trigger" onclick="toggleTurboVanity()" class="btn-primary w-full py-6 text-sm italic">Engage Turbines</button>
                 </div>
-                <div class="w-full lg:w-2/3 space-y-4">
-                    <label class="label-accent">Active Data Streams (10 Cores)</label>
-                    <div id="node-grid" class="grid grid-cols-2 sm:grid-cols-5 gap-2"></div>
-                    <div class="mt-6 p-4 bg-black/40 border border-zinc-900 flex flex-col sm:flex-row justify-between items-center gap-4">
-                        <span class="text-[11px] font-black uppercase tracking-widest text-zinc-500">Harvest Count: <span id="session-count" class="text-[#00ff00]">0</span></span>
-                        <button onclick="downloadAllHarvested()" class="text-[10px] font-black text-[#00ff00] uppercase border-b border-[#00ff00] pb-1 hover:opacity-70">Silo Session Export (.JSON)</button>
-                    </div>
-                </div>
-            </div>
-            <div id="vanity-results" class="grid grid-cols-1 gap-4"></div>
-        </div>
-        
-        <footer class="text-center pt-20">
-            <p class="text-[14px] font-black uppercase tracking-[1em] text-[#00ff00] opacity-40 ml-[1em]">POWERED BY XMEME</p>
-        </footer>
-    </div>
-
-    <script>
-        // --- VISUAL ENGINE ---
-        const canvas = document.getElementById('fx-canvas');
-        const ctx = canvas.getContext('2d');
-        let particles = [];
-        function initFX() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-            particles = Array.from({length: 60}, () => ({
-                x: Math.random() * canvas.width, y: Math.random() * canvas.height,
-                z: Math.random() * 2 + 0.5, vx: (Math.random() - 0.5) * 0.5,
-                vy: (Math.random() - 0.5) * 0.5, size: Math.random() * 2
-            }));
-        }
-        function drawLightning(x, y, segments, color) {
-            ctx.beginPath(); ctx.moveTo(x, 0); ctx.strokeStyle = color; ctx.lineWidth = 2;
-            ctx.shadowBlur = 15; ctx.shadowColor = color;
-            let curX = x; let curY = 0;
-            const segmentHeight = canvas.height / segments;
-            for(let i=0; i<segments; i++) { curX += (Math.random() - 0.5) * 80; curY += segmentHeight; ctx.lineTo(curX, curY); }
-            ctx.stroke(); ctx.shadowBlur = 0;
-        }
-        function animateFX() {
-            ctx.fillStyle = '#000'; ctx.fillRect(0, 0, canvas.width, canvas.height);
-            particles.forEach(p => {
-                p.x += p.vx; p.y += p.vy;
-                if(p.x < 0) p.x = canvas.width; if(p.x > canvas.width) p.x = 0;
-                if(p.y < 0) p.y = canvas.height; if(p.y > canvas.height) p.y = 0;
-                ctx.fillStyle = `rgba(0, 255, 0, ${0.1 * p.z})`;
-                ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI*2); ctx.fill();
-            });
-            if(Math.random() > 0.99) drawLightning(Math.random() * canvas.width, canvas.height, 12, '#00ff00');
-            requestAnimationFrame(animateFX);
-        }
-        window.addEventListener('resize', initFX); initFX(); animateFX();
-
-        // --- CORE LOGIC ---
-        let currentSuite = null; let activeEntropy = null; let isVisible = false;
-        let sessionHarvest = [];
-
-        function deriveXaman(entropy) {
-            const letters = ['A','B','C','D','E','F','G','H'];
-            return letters.map((l, i) => {
-                const s = i * 4;
-                const n = (entropy[s]<<24 | entropy[s+1]<<16 | entropy[s+2]<<8 | entropy[s+3]) >>> 0;
-                return { letter: l, number: (n % 1000000).toString().padStart(6, '0') };
-            });
-        }
-
-        async function deriveFullSuite(entropyArray) {
-            try {
-                const entropy = new Uint8Array(entropyArray);
-                const wallet = xrpl.Wallet.fromEntropy(entropy.slice(0, 16));
-                return { 
-                    address: wallet.classicAddress, 
-                    seed: wallet.seed, 
-                    entropy: Array.from(entropy),
-                    m12: ethers.utils.entropyToMnemonic(entropy.slice(0, 16)),
-                    m16: ethers.utils.entropyToMnemonic(entropy.slice(0, 24)),
-                    m24: ethers.utils.entropyToMnemonic(entropy),
-                    xaman: deriveXaman(entropy)
-                };
-            } catch (err) { console.error("Derivation Error:", err); throw err; }
-        }
-
-        async function generateEverything() {
-            try {
-                showOverlay("GENERATING_ENTROPY");
-                const e = crypto.getRandomValues(new Uint8Array(32));
-                currentSuite = await deriveFullSuite(e);
-                activeEntropy = new Uint8Array(currentSuite.entropy);
-                renderVault();
-                document.getElementById('output-area').classList.remove('hidden');
-                isVisible = false; toggleVisibility();
-            } catch (err) { alert("Initialization Error. See console."); }
-            finally { hideOverlay(); }
-        }
-
-        function renderVault() {
-            if(!currentSuite) return;
-            document.getElementById('addr').innerText = currentSuite.address;
-            document.getElementById('m12').innerText = currentSuite.m12;
-            document.getElementById('m16').innerText = currentSuite.m16;
-            document.getElementById('m24').innerText = currentSuite.m24;
-            document.getElementById('seed').innerText = currentSuite.seed;
-            document.getElementById('secret-nums-grid').innerHTML = currentSuite.xaman.map(r => `
-                <div class="xaman-row"><span class="xaman-letter">${r.letter}</span><span class="xaman-number">${r.number}</span></div>
-            `).join('');
-        }
-
-        function triggerDownload(data, name) {
-            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-            const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; a.click();
-        }
-
-        async function exportSecure() {
-            const pA = document.getElementById('pass-a').value;
-            const pB = document.getElementById('pass-b').value;
-            if(!pA || !pB || pA === pB) return;
-            showOverlay("ENCRYPTING_SILO");
-            const salt = crypto.getRandomValues(new Uint8Array(16));
-            const keyHex = await hashwasm.argon2id({
-                password: pA + "::" + pB, salt: salt, parallelism: 1, iterations: 4, memorySize: 65536, hashLength: 32, outputType: 'hex'
-            });
-            const entropyHex = Array.from(activeEntropy).map(b => b.toString(16).padStart(2, '0')).join('');
-            const encrypted = CryptoJS.AES.encrypt(entropyHex, keyHex).toString();
-            triggerDownload({ metadata: { app: "TURBO-MASTER", address: currentSuite.address }, crypto: { salt: Array.from(salt), payload: encrypted } }, `TURBO_SEC_${currentSuite.address}.json`);
-            hideOverlay();
-        }
-
-        function exportPlaintext() {
-            if(!activeEntropy) return;
-            triggerDownload({ metadata: { app: "TURBO-MASTER", address: currentSuite.address }, payload: { entropy: Array.from(activeEntropy), suite: currentSuite } }, `TURBO_RAW_${currentSuite.address}.json`);
-        }
-
-        async function importVault(input) {
-            const file = input.files[0]; if(!file) return;
-            const text = await file.text(); const data = JSON.parse(text);
-            if(data.crypto) {
-                const pA = prompt("KEY ALPHA:"); const pB = prompt("KEY BETA:");
-                showOverlay("DECRYPTING_SILO");
-                const keyHex = await hashwasm.argon2id({
-                    password: pA + "::" + pB, salt: new Uint8Array(data.crypto.salt), parallelism: 1, iterations: 4, memorySize: 65536, hashLength: 32, outputType: 'hex'
-                });
-                try {
-                    const bytes = CryptoJS.AES.decrypt(data.crypto.payload, keyHex);
-                    const hex = bytes.toString(CryptoJS.enc.Utf8);
-                    const entropy = new Uint8Array(hex.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
-                    currentSuite = await deriveFullSuite(entropy);
-                    activeEntropy = entropy;
-                    renderVault();
-                    document.getElementById('output-area').classList.remove('hidden');
-                } catch(e) { alert("AUTHENTICATION_FAILED"); }
-                hideOverlay();
-            } else {
-                activeEntropy = new Uint8Array(data.payload.entropy);
-                currentSuite = await deriveFullSuite(activeEntropy);
-                renderVault(); document.getElementById('output-area').classList.remove('hidden');
-            }
-        }
-
-        // --- EXTRACTION ENGINE ---
-        const workerCode = `
-            importScripts('https://cdn.jsdelivr.net/npm/xrpl@4.0.0/build/xrpl-latest-min.js');
-            self.onmessage = function(e) {
-                const { prefix, batchSize } = e.data;
-                const fullPrefix = 'r' + prefix;
-                while (true) {
-                    for (let i = 0; i < batchSize; i++) {
-                        const entropy = crypto.getRandomValues(new Uint8Array(32));
-                        const wallet = xrpl.Wallet.fromEntropy(entropy.slice(0,16));
-                        if (i % 50 === 0) self.postMessage({ type: 'STREAM', address: wallet.classicAddress });
-                        if (wallet.classicAddress.startsWith(fullPrefix)) {
-                            self.postMessage({ type: 'MATCH', entropy: Array.from(entropy) });
-                        }
-                    }
-                }
-            };
-        `;
-        const workerUrl = URL.createObjectURL(new Blob([workerCode]));
-        let workers = []; let isSearching = false; const nodeEls = [];
-        const nodeGrid = document.getElementById('node-grid');
-        for(let i=0; i<10; i++){
-            const div = document.createElement('div');
-            div.className = "bg-black border border-zinc-900 p-2 flex items-center justify-center h-10";
-            div.innerHTML = `<div id="stream-${i}" class="text-[8px] text-zinc-900 break-all text-center">OFFLINE</div>`;
-            nodeGrid.appendChild(div); nodeEls.push(document.getElementById(`stream-${i}`));
-        }
-
-        function toggleTurboVanity() {
-            const p = document.getElementById('vanity-prefix').value.trim().toUpperCase();
-            if(!isSearching && !p) return;
-            isSearching = !isSearching;
-            const btn = document.getElementById('vanity-trigger');
-            if(isSearching) {
-                btn.innerText = "KILL EXTRACTION"; btn.style.background = "#200"; btn.style.color = "#f00";
-                for(let i=0; i<10; i++) {
-                    const w = new Worker(workerUrl);
-                    w.onmessage = (e) => {
-                        if(e.data.type === 'STREAM') { nodeEls[i].innerText = e.data.address; nodeEls[i].style.color = "#00ff00"; }
-                        else if(e.data.type === 'MATCH') { deriveFullSuite(e.data.entropy).then(s => processMatch(s)); }
-                    };
-                    w.postMessage({prefix: p, batchSize: 85}); workers.push(w);
-                }
-            } else {
-                btn.innerText = "RUN EXTRACTION"; btn.style.background = ""; btn.style.color = "";
-                workers.forEach((w, i) => { w.terminate(); nodeEls[i].innerText = "OFFLINE"; nodeEls[i].style.color = "#222"; });
-                workers = [];
-            }
-        }
-
-        function processMatch(suite) {
-            sessionHarvest.push(suite);
-            document.getElementById('session-count').innerText = sessionHarvest.length;
-            if(document.getElementById('auto-dl').checked) triggerDownload({ metadata: { type: "AUTO-HARVEST" }, payload: suite }, `AUTO_${suite.address}.json`);
-            addResultToUI(suite);
-        }
-
-        function addResultToUI(suite) {
-            const container = document.getElementById('vanity-results');
-            const div = document.createElement('div');
-            div.className = "glass p-4 md:p-6 rounded-sm border-l-4 border-[#00ff00] space-y-6";
-            const xamanHtml = suite.xaman.map(r => `
-                <div class="xaman-row"><span class="xaman-letter">${r.letter}</span><span class="xaman-number">${r.number}</span></div>
-            `).join('');
-            div.innerHTML = `
-                <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-zinc-900 pb-4 gap-4">
-                    <div><label class="label-accent">Match Extraction</label><div class="text-white font-black text-sm md:text-lg break-all">${suite.address}</div></div>
-                    <button onclick="downloadSpecific('${suite.address}')" class="bg-[#00ff00] text-black text-[10px] px-6 py-2 font-black uppercase w-full md:w-auto">Archive Match</button>
-                </div>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div class="p-3 bg-black/60 border border-zinc-900"><label class="label-accent">12-Word</label><div class="text-[10px] text-zinc-500 break-words">${suite.m12}</div></div>
-                    <div class="p-3 bg-black/60 border border-zinc-900"><label class="label-accent">16-Word</label><div class="text-[10px] text-zinc-500 break-words">${suite.m16}</div></div>
-                    <div class="p-3 bg-black/60 border border-zinc-900"><label class="label-accent">24-Word</label><div class="text-[10px] text-zinc-500 break-words">${suite.m24}</div></div>
-                </div>
-                <input type="hidden" id="raw-${suite.address}" value='${JSON.stringify(suite)}'>
-            `;
-            container.prepend(div);
-        }
-
-        function downloadSpecific(addr) {
-            const data = JSON.parse(document.getElementById(`raw-${addr}`).value);
-            triggerDownload({ metadata: { type: "MANUAL-EXPORT" }, payload: data }, `HARVEST_${addr}.json`);
-        }
-
-        function showOverlay(msg) { document.getElementById('overlay-msg').innerText = msg; document.getElementById('status-overlay').style.display = 'flex'; }
-        function hideOverlay() { document.getElementById('status-overlay').style.display = 'none'; }
-        function toggleVisibility() {
-            isVisible = !isVisible;
-            document.querySelectorAll('.secret-blur, .secret-visible').forEach(el => {
-                el.classList.toggle('secret-blur', !isVisible); el.classList.toggle('secret-visible', isVisible);
-            });
-            document.getElementById('vis-btn').innerText = isVisible ? "Lock Terminal" : "Decrypt UI";
-        }
-        function switchTab(t) {
-            document.getElementById('view-vault').classList.toggle('hidden', t !== 'vault');
-            document.getElementById('view-vanity').classList.toggle('hidden', t !== 'vanity');
-            document.getElementById('tab-vault').classList.toggle('active', t === 'vault');
-            document.getElementById('tab-vanity').classList.toggle('active', t === 'vanity');
-        }
-    </script>
-</body>
-</html>
+                <div class="w-full lg:w-2/3 space-y-6">
+                    <label class="label-accent">Worker Array Output</label>
+                    <div id="node-grid" class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3"></div>
+                    <div class="mt-8 p-6 bg-black/60 border border-[#00ff0033] flex flex-col sm:flex-row justify-between items-center gap-6">
+                        <span class="text-xs font-black uppercase tracking-[0.4em] text-zinc-400">Harvest: <span id="session-count" class="text-[#00ff00] text-lg">0</span></span>
+                        <div id="total-attempts" class="text-[11px] text
 
